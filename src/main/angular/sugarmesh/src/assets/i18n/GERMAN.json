@@ -1,0 +1,18 @@
+{
+  "application": {
+    "title": "Sugarmesh"
+  },
+  "main": {
+    "logged_in": "Sie sind eingeloggt als",
+    "logout": "Abmelden"
+  },
+
+  "language": {
+    "GERMAN": "Deutsch",
+    "ENGLISH": "Englisch"
+  },
+  "profile": {
+    "language": "Sprache",
+    "username": "Benutzername"
+  },
+}

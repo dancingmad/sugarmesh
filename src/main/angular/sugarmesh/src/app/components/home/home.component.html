@@ -1,0 +1,18 @@
+<div class="row">
+  <div class="col">
+      {{ 'main.logged_in' | translate}} {{user.username}}
+  </div>
+</div>
+<div class="row mt-2">
+    <div class="col-2">Domain</div>
+    <div class="col-6"><input type="text" [(ngModel)]="graph.domain"> </div>
+</div>
+<div class="row">
+    <div class="col-2">Url</div>
+    <div class="col-6"><input type="text" [(ngModel)]="graph.url"> </div>
+</div>
+<div class="row mt-2">
+    <div class="col">
+        <button type="button" (click)="createGraph()">Create the Graph</button>
+    </div>
+</div>
