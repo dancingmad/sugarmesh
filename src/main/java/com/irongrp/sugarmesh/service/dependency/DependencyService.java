@@ -1,19 +1,18 @@
 package com.irongrp.sugarmesh.service.dependency;
 
-import com.irongrp.sugarmesh.api.DependencyGraph;
-import com.irongrp.sugarmesh.service.dependency.model.*;
+import com.irongrp.sugarmesh.service.dependency.model.Application;
+import com.irongrp.sugarmesh.service.dependency.model.ApplicationPackage;
+import com.irongrp.sugarmesh.service.dependency.model.ApplicationRepository;
+import com.irongrp.sugarmesh.service.dependency.model.Bean;
 import com.irongrp.sugarmesh.service.user.model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.beans.BeansEndpoint;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -24,67 +23,68 @@ public class DependencyService {
     private static Pattern TYPE_PATTERN = Pattern.compile("(\\w+\\.\\w+)\\.(\\w+)\\.?(.*)\\.([A-Z].*)");
     private static Logger LOGGER = LoggerFactory.getLogger(DependencyService.class);
 
-    @Autowired
-    private RestTemplate restTemplate;
-
-    @Autowired
     private ApplicationRepository applicationRepository;
 
+    @Autowired
+    public DependencyService(ApplicationRepository applicationRepository) {
+        this.applicationRepository = applicationRepository;
+    }
 
-    public DependencyGraph createDependencyGraph(User user, DependencyGraph dependencyGraph) {
-        ExternalDependencyGraph graph = restTemplate.getForObject(dependencyGraph.getUrl(),ExternalDependencyGraph.class);
+    public Map<String,Application> createDependencyGraph(User user,
+                                                 BeansEndpoint.ApplicationBeans beans,
+                                                 String domain) {
+
         Map<String,ApplicationPackage> packageMap = new HashMap<>();
         Map<String,Bean> beanMap = new HashMap<>();
         Map<String,Application> applicationMap = new HashMap<>();
 
-        if (graph == null) {
+        if (beans == null) {
             return null;
         }
-        graph.getContexts().getApplication().getBeans().forEach((key, value) -> addBean(key,
+        beans.getContexts().values()
+                .forEach(ctx -> ctx.getBeans().forEach((key, value) -> addBean(key,
                 value,
                 applicationMap,
                 beanMap,
                 packageMap,
-                dependencyGraph.getDomain(),
-                user));
-        graph.getContexts().getApplication().getBeans().forEach((key, value) -> linkBeanDependencies(key,
+                domain,
+                user)));
+
+        beans.getContexts().values().forEach(
+                ctx -> ctx.getBeans().forEach((key, value) -> linkBeanDependencies(key,
                 value,
-                beanMap));
+                beanMap)));
+
         applicationMap
                 .values()
-                .forEach(app -> applicationRepository.deleteApplication(user, app.getName()));
+                .forEach(app -> applicationRepository.deleteApplication(user.getUsername(), app.getName()));
         applicationMap.values()
                 .forEach(app -> applicationRepository.save(app));
-        return new DependencyGraph.Builder()
-                .domain(dependencyGraph.getDomain())
-                .url(dependencyGraph.getUrl())
-                .applications(applicationMap)
-                .build();
+        return applicationMap;
     }
 
     private void linkBeanDependencies(String beanName,
-                          ExternalDependencyGraph.BeanData beanData,
+                          BeansEndpoint.BeanDescriptor beanData,
                           Map<String, Bean> beanMap) {
         Bean bean = beanMap.get(beanName);
         if (bean == null) {
             return;
         }
         bean.setDependsOn(
-                beanData.getDependencies()
-                        .stream()
+                Arrays.stream(beanData.getDependencies())
                         .map(beanMap::get)
                         .filter(Objects::nonNull)
                         .collect(Collectors.toList()));
     }
 
     private void addBean(String beanName,
-                         ExternalDependencyGraph.BeanData beanData,
+                         BeansEndpoint.BeanDescriptor beanData,
                          Map<String,Application> applicationMap,
                          Map<String,Bean> beanMap,
                          Map<String, ApplicationPackage> packageMap,
                          String targetDomain,
                          User user) {
-        Matcher matcher = TYPE_PATTERN.matcher(beanData.getType());
+        Matcher matcher = TYPE_PATTERN.matcher(beanData.getType().toString());
         if (!matcher.find() || matcher.groupCount() < 3) {
             LOGGER.warn("Weird package name for bean '{}': {}",
                     beanName,
@@ -109,7 +109,7 @@ public class DependencyService {
             bean.setBelongsToPackage(packageMap.get(beanPackage));
         }
         bean.setName(beanName);
-        bean.setFullName(beanData.getType());
+        bean.setFullName(beanData.getType().toString());
         beanMap.put(beanName,bean);
         app.getBeans().add(bean);
         LOGGER.info("Created Beaninfo for {}",beanName);

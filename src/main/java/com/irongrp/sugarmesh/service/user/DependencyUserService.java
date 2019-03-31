@@ -5,7 +5,6 @@ import com.irongrp.sugarmesh.service.exception.GeneralException;
 import com.irongrp.sugarmesh.service.exception.ResourceAlreadyExistingException;
 import com.irongrp.sugarmesh.service.exception.UnauthorizedException;
 import com.irongrp.sugarmesh.service.user.model.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -18,15 +17,14 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
-public class UserService {
+public class DependencyUserService {
 
     private static final String SESSION_USERNAME = "SESSION_USERNAME";
+
     private UserRepository userRepository;
     private PasswordRepository passwordRepository;
 
-    @Autowired
-    UserService(UserRepository userRepository,
-                PasswordRepository passwordRepository) {
+    public DependencyUserService(UserRepository userRepository, PasswordRepository passwordRepository) {
         this.userRepository = userRepository;
         this.passwordRepository = passwordRepository;
     }
@@ -95,7 +93,7 @@ public class UserService {
         user.setFollowing(followingUsers);
     }
 
-    private User getUser(String username) {
+    public User getUser(String username) {
         return userRepository.findByUsername(username);
     }
 
