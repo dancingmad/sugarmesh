@@ -55,12 +55,12 @@ public class DependencyService {
                 value,
                 beanMap)));
 
-        applicationMap
-                .values()
-                .forEach(app -> applicationRepository.deleteApplication(user.getUsername(), app.getName()));
-        applicationMap.values()
-                .forEach(app -> applicationRepository.save(app));
         return applicationMap;
+    }
+
+    public Application updateApplication(Application app) {
+        applicationRepository.deleteApplication(app.getCreatedBy().getUsername(), app.getName());
+        return applicationRepository.save(app);
     }
 
     private void linkBeanDependencies(String beanName,
