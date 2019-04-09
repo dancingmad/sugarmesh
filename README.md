@@ -1,25 +1,61 @@
 # sugarmesh
 
 ## How to Build
-To build a runnable version, you will need to 
-
-1) generate the UI package. Requires Angular CLI
-src/main/angular/sugarmesh
-npm install
-ng build
-
-2) mvn clean package
+mvn clean install (to install into local repository)
 
 ## How to Run
-The application requires a Neo4J server using default 7687 bolt port.
+1) as a library 
 
-`
-java -jar target/sugarmesh.jar --server.port=<port> --spring.data.neo4j.uri=bolt://localhost:7687 
---spring.data.neo4j.username=<username>
---spring.data.neo4j.password=<password>
-`
+add dependency to pom.xml:
+```
+<dependency>
+  <groupId>com.irongrp</groupId>
+  <artifactId>sugarmesh</artifactId>
+  <version>1.0.0</version>
+</dependency>
+```
+Provide credentials in the application.properties:
 
-Create a new user or log in with an existing, the password is stored with SHA256.
+```
+spring.data.neo4j.uri=bolt://localhost:7687
+spring.data.neo4j.username=
+spring.data.neo4j.password=
+```
 
-Point to url of spring boot beans actuator (e.g. http://localhost:8080/actuator/beans) 
-and provide the domain name (e.g. com.irongrp) - the data will be generated and can be played around with in the neo4j browser.
+Inject Test to existing Spring Context
+
+```
+@RunWith(SpringRunner.class)
+@SpringBootTest
+@EnableNeo4jRepositories(basePackages = "com.irongrp")
+@EntityScan("com.irongrp.sugarmesh")
+public class MainAppTests {
+
+	@Autowired
+	private BeansEndpoint endpoint;
+
+	private DependencyUserService userService;
+	private DependencyService dependencyService;
+
+	@Autowired
+    private UserRepository userRepository;
+
+	@Autowired
+    private PasswordRepository passwordRepository;
+
+    @Autowired
+    private ApplicationRepository applicationRepository;
+
+	@Test
+	public void updateDependencyGraph() {
+	    DependencyUserService userService = new DependencyUserService(userRepository, passwordRepository);
+		User user = userService.getUser("application");
+		if (user == null) {
+			user = userService.register("application","");
+		}
+		DependencyService dependencyService = new DependencyService(applicationRepository);
+		dependencyService.createDependencyGraph(user,endpoint.beans(),"com.irongrp");
+	}
+
+}
+```
