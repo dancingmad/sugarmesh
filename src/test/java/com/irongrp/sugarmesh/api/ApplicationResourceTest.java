@@ -53,7 +53,7 @@ public class ApplicationResourceTest {
     @Test
     public void testNop() throws Exception {
         String result = this.mockMvc
-                .perform(MockMvcRequestBuilders.get("/api/beans/nop"))
+                .perform(MockMvcRequestBuilders.get("/api/application/nop"))
                 .andReturn().getResponse()
                 .getContentAsString();
         Assert.assertEquals("OK",result);
