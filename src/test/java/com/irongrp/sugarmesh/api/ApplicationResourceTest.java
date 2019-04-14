@@ -1,6 +1,8 @@
 package com.irongrp.sugarmesh.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.irongrp.sugarmesh.api.model.ApplicationDTO;
+import com.irongrp.sugarmesh.api.model.ApplicationMapper;
 import com.irongrp.sugarmesh.service.dependency.DependencyService;
 import com.irongrp.sugarmesh.service.dependency.model.Application;
 import com.irongrp.sugarmesh.service.user.DependencyUserService;
@@ -68,6 +70,7 @@ public class ApplicationResourceTest {
         assertEquals(1,applicationMap.size());
         applicationMap.values()
                 .stream()
+                .map(ApplicationMapper::map)
                 .map(this::writeValueAsString)
                 .forEach(app -> {
                     try {
@@ -84,9 +87,9 @@ public class ApplicationResourceTest {
         );
     }
 
-    private String writeValueAsString(Application app) {
+    private String writeValueAsString(ApplicationDTO appDTO) {
         try {
-            return objectMapper.writeValueAsString(app);
+            return objectMapper.writeValueAsString(appDTO);
         }
         catch(Exception e) {
             throw new RuntimeException();

@@ -27,8 +27,18 @@ public class Application {
     @Relationship(type = "packages")
     private List<ApplicationPackage> packages;
 
+    private ApplicationPackage rootPackage;
+
     public List<ApplicationPackage> getPackages() {
         return packages;
+    }
+
+    public ApplicationPackage getRootPackage() {
+        return rootPackage;
+    }
+
+    public void setRootPackage(ApplicationPackage rootPackage) {
+        this.rootPackage = rootPackage;
     }
 
     public void setPackages(List<ApplicationPackage> packages) {

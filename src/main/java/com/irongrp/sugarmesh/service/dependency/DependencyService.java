@@ -41,6 +41,7 @@ public class DependencyService {
         if (beans == null) {
             return null;
         }
+
         beans.getContexts().values()
                 .forEach(ctx -> ctx.getBeans().forEach((key, value) -> addBean(key,
                 value,
@@ -54,7 +55,12 @@ public class DependencyService {
                 ctx -> ctx.getBeans().forEach((key, value) -> linkBeanDependencies(key,
                 value,
                 beanMap)));
-
+        applicationMap.values().forEach(
+                app -> {
+                    app.getRootPackage().setPackages(new ArrayList<>(app.getPackages()));
+                    app.getPackages().add(app.getRootPackage());
+                }
+        );
         return applicationMap;
     }
 
@@ -107,6 +113,8 @@ public class DependencyService {
         Bean bean = new Bean();
         if (!StringUtils.isEmpty(beanPackage)) {
             bean.setBelongsToPackage(packageMap.get(beanPackage));
+        } else {
+            bean.setBelongsToPackage(app.getRootPackage());
         }
         bean.setName(beanName);
         bean.setFullName(beanData.getType().toString());
@@ -117,11 +125,14 @@ public class DependencyService {
 
     private Application createApplication(String domain, String applicationName,User user) {
         Application app = new Application();
+        ApplicationPackage rootPackage = new ApplicationPackage();
+        rootPackage.setName("root");
         app.setName(applicationName);
         app.setDomain(domain);
         app.setBeans(new ArrayList<>());
         app.setCreatedBy(user);
         app.setPackages(new ArrayList<>());
+        app.setRootPackage(rootPackage);
         return app;
     }
 
@@ -147,9 +158,9 @@ public class DependencyService {
                 applicationPackage.getPackages().add(childPackage);
             }
             packageMap.put(packageName,applicationPackage);
+            app.getPackages().add(applicationPackage);
             if (!packageName.contains(".")) {
                packageName = "";
-               app.getPackages().add(applicationPackage);
             } else {
                 packageName = packageName.substring(0, packageName.lastIndexOf("."));
             }
